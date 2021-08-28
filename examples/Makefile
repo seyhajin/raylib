@@ -25,7 +25,7 @@
 
 # Define required raylib variables
 PROJECT_NAME       ?= raylib_examples
-RAYLIB_VERSION     ?= 3.5.0
+RAYLIB_VERSION     ?= 3.8.0
 RAYLIB_PATH        ?= ..
 
 # Define default options
@@ -126,8 +126,8 @@ ifeq ($(PLATFORM),PLATFORM_WEB)
     EMSDK_PATH         ?= C:/emsdk
     EMSCRIPTEN_PATH    ?= $(EMSDK_PATH)/upstream/emscripten
     CLANG_PATH          = $(EMSDK_PATH)/upstream/bin
-    PYTHON_PATH         = $(EMSDK_PATH)/python/3.7.4-pywin32_64bit
-    NODE_PATH           = $(EMSDK_PATH)/node/12.18.1_64bit/bin
+    PYTHON_PATH         = $(EMSDK_PATH)/python/3.9.2-1_64bit
+    NODE_PATH           = $(EMSDK_PATH)/node/14.15.5_64bit/bin
     export PATH         = $(EMSDK_PATH);$(EMSCRIPTEN_PATH);$(CLANG_PATH);$(NODE_PATH);$(PYTHON_PATH);C:\raylib\MinGW\bin:$$(PATH)
 endif
 
@@ -195,7 +195,7 @@ endif
 #  -std=gnu99           defines C language mode (GNU C from 1999 revision)
 #  -Wno-missing-braces  ignore invalid warning (GCC bug 53119)
 #  -D_DEFAULT_SOURCE    use with -std=c99 on Linux and PLATFORM_WEB, required for timespec
-CFLAGS += -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces
+CFLAGS += -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Wunused-result
 
 ifeq ($(BUILD_MODE),DEBUG)
     CFLAGS += -g
@@ -244,7 +244,7 @@ ifeq ($(PLATFORM),PLATFORM_WEB)
     # --memory-init-file 0       # to avoid an external memory initialization code file (.mem)
     # --preload-file resources   # specify a resources folder for data compilation
     # --source-map-base          # allow debugging in browser with source map
-    CFLAGS += -s USE_GLFW=3 -s ASYNCIFY -s TOTAL_MEMORY=67108864 -s FORCE_FILESYSTEM=1 $(dir $<)resources@resources
+    CFLAGS += -s USE_GLFW=3 -s ASYNCIFY -s TOTAL_MEMORY=67108864 -s FORCE_FILESYSTEM=1 --preload-file $(dir $<)resources@resources
 
     # NOTE: Simple raylib examples are compiled to be interpreter with asyncify, that way,
     # we can compile same code for ALL platforms with no change required, but, working on bigger
@@ -257,8 +257,8 @@ ifeq ($(PLATFORM),PLATFORM_WEB)
 endif
 
 # Define include paths for required headers
-# NOTE: Several external required libraries (stb and others)
-INCLUDE_PATHS = -I. -I$(RAYLIB_PATH)/src -I$(RAYLIB_PATH)/src/external
+# NOTE: Some external/extras libraries could be required (stb, physac, easings...)
+INCLUDE_PATHS = -I. -I$(RAYLIB_PATH)/src -I$(RAYLIB_PATH)/src/external -I$(RAYLIB_PATH)/src/extras
 
 # Define additional directories containing required header files
 ifeq ($(PLATFORM),PLATFORM_RPI)
@@ -277,7 +277,7 @@ ifeq ($(PLATFORM),PLATFORM_DESKTOP)
         INCLUDE_PATHS += -I/usr/local/include
     endif
     ifeq ($(PLATFORM_OS),LINUX)
-        INCLUDE_PATHS = -I$(RAYLIB_H_INSTALL_PATH) -I. -I$(RAYLIB_PATH)/src -I$(RAYLIB_PATH)/src/external
+        INCLUDE_PATHS += -I$(RAYLIB_H_INSTALL_PATH)
     endif
 endif
 
@@ -306,10 +306,6 @@ endif
 
 ifeq ($(PLATFORM),PLATFORM_RPI)
     LDFLAGS += -L/opt/vc/lib
-endif
-
-ifeq ($(PLATFORM),PLATFORM_DRM)
-    LDFLAGS += -lGLESv2 -lEGL -ldrm -lgbm
 endif
 
 # Define any libraries required on linking
@@ -399,7 +395,8 @@ CORE = \
     core/core_vr_simulator \
     core/core_loading_thread \
     core/core_quat_conversion \
-    core/core_window_flags
+    core/core_window_flags \
+    core/core_split_screen
 
 SHAPES = \
     shapes/shapes_basic_shapes \
@@ -437,7 +434,8 @@ TEXTURES = \
     textures/textures_sprite_explosion \
     textures/textures_bunnymark \
     textures/textures_blend_modes \
-    textures/textures_draw_tiled
+    textures/textures_draw_tiled \
+    textures/textures_poly
 
 TEXT = \
     text/text_raylib_fonts \
@@ -449,7 +447,8 @@ TEXT = \
     text/text_input_box \
     text/text_writing_anim \
     text/text_rectangle_bounds \
-    text/text_unicode
+    text/text_unicode \
+    text/text_draw_3d
 
 MODELS = \
     models/models_animation \
@@ -485,7 +484,7 @@ SHADERS = \
     shaders/shaders_simple_mask \
     shaders/shaders_spotlight \
     shaders/shaders_hot_reloading \
-    shaders/shaders_rlgl_mesh_instanced \
+    shaders/shaders_mesh_instancing \
     shaders/shaders_multi_sample2d
 
 AUDIO = \

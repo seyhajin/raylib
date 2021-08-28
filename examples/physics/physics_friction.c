@@ -14,7 +14,7 @@
 #include "raylib.h"
 
 #define PHYSAC_IMPLEMENTATION
-#include "physac.h"
+#include "extras/physac.h"
 
 int main(void)
 {
@@ -70,7 +70,7 @@ int main(void)
         //----------------------------------------------------------------------------------
         UpdatePhysics();            // Update physics system
 
-        if (IsKeyPressed('R'))      // Reset physics system
+        if (IsKeyPressed(KEY_R))    // Reset physics system
         {
             // Reset dynamic physics bodies position, velocity and rotation
             bodyA->position = (Vector2){ 35, screenHeight*0.6f };

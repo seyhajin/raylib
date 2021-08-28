@@ -42,13 +42,13 @@ int main(void)
     camera.target = (Vector3){ 0.0f, 0.0f, 0.0f };
     camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
     camera.fovy = 45.0f;
-    camera.type = CAMERA_PERSPECTIVE;
+    camera.projection = CAMERA_PERSPECTIVE;
 
     // Define our three models to show the shader on
-    Mesh torus = GenMeshTorus(.3, 1, 16, 32);
+    Mesh torus = GenMeshTorus(0.3f, 1, 16, 32);
     Model model1 = LoadModelFromMesh(torus);
 
-    Mesh cube = GenMeshCube(.8,.8,.8);
+    Mesh cube = GenMeshCube(0.8f,0.8f,0.8f);
     Model model2 = LoadModelFromMesh(cube);
 
     // Generate model to be shaded just to see the gaps in the other two
@@ -57,7 +57,7 @@ int main(void)
 
     // Load the shader
     Shader shader = LoadShader(0, TextFormat("resources/shaders/glsl%i/mask.fs", GLSL_VERSION));
-    
+
     // Load and apply the diffuse texture (colour map)
     Texture texDiffuse = LoadTexture("resources/plasma.png");
     model1.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texDiffuse;
@@ -131,10 +131,10 @@ int main(void)
     UnloadModel(model1);
     UnloadModel(model2);
     UnloadModel(model3);
-    
+
     UnloadTexture(texDiffuse);  // Unload default diffuse texture
     UnloadTexture(texMask);     // Unload texture mask
-    
+
     UnloadShader(shader);       // Unload shader
 
     CloseWindow();              // Close window and OpenGL context

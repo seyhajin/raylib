@@ -11,7 +11,7 @@
 *
 ********************************************************************************************
 *
-* To export a model from blender, make sure it is not posed, the vertices need to be in the 
+* To export a model from blender, make sure it is not posed, the vertices need to be in the
 * same position as they would be in edit mode.
 * and that the scale of your models is set to 0. Scaling can be done from the export menu.
 *
@@ -21,6 +21,7 @@
 
 #include <stdlib.h>
 
+#define MAX_MODELS  8
 
 int main(void)
 {
@@ -29,7 +30,7 @@ int main(void)
     const int screenWidth = 800;
     const int screenHeight = 450;
 
-    InitWindow(screenWidth, screenHeight, "raylib [models] example - model animation");
+    InitWindow(screenWidth, screenHeight, "raylib [models] example - model");
 
     // Define the camera to look into our 3d world
     Camera camera = { 0 };
@@ -37,22 +38,22 @@ int main(void)
     camera.target = (Vector3){ 0.0f, 0.0f, 0.0f };      // Camera looking at point
     camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };          // Camera up vector (rotation towards target)
     camera.fovy = 45.0f;                                // Camera field-of-view Y
-    camera.type = CAMERA_PERSPECTIVE;                   // Camera mode type
+    camera.projection = CAMERA_PERSPECTIVE;             // Camera mode type
 
-    Model model[7];
-    
+    Model model[MAX_MODELS] = { 0 };
+
     model[0] = LoadModel("resources/gltf/raylib_32x32.glb");
     model[1] = LoadModel("resources/gltf/rigged_figure.glb");
-    model[2] = LoadModel("resources/gltf/Avocado.glb");
-    model[3] = LoadModel("resources/gltf/GearboxAssy.glb");
-    model[4] = LoadModel("resources/gltf/BoxAnimated.glb");
-    model[5] = LoadModel("resources/gltf/AnimatedTriangle.gltf");
-    model[6] = LoadModel("resources/gltf/AnimatedMorphCube.glb");
-    
-    int currentModel = 0;
-    int modelCount = 7;
+    model[2] = LoadModel("resources/gltf/GearboxAssy.glb");
+    model[3] = LoadModel("resources/gltf/BoxAnimated.glb");
+    model[4] = LoadModel("resources/gltf/AnimatedTriangle.gltf");
+    model[5] = LoadModel("resources/gltf/AnimatedMorphCube.glb");
+    model[6] = LoadModel("resources/gltf/vertex_colored_object.glb");
+    model[7] = LoadModel("resources/gltf/girl.glb");
 
-    Vector3 position = { 0.0f, 0.0f, 0.0f };            // Set model position
+    int currentModel = 0;
+
+    Vector3 position = { 0.0f, 0.0f, 0.0f };    // Set model position
 
     SetCameraMode(camera, CAMERA_FREE); // Set free camera mode
 
@@ -65,23 +66,17 @@ int main(void)
         // Update
         //----------------------------------------------------------------------------------
         UpdateCamera(&camera);
-        
-        if(IsKeyReleased(KEY_RIGHT))
+
+        if (IsKeyReleased(KEY_RIGHT))
         {
             currentModel++;
-            if(currentModel == modelCount)
-            {
-                currentModel = 0;
-            }
+            if (currentModel == MAX_MODELS) currentModel = 0;
         }
-    
-        if(IsKeyReleased(KEY_LEFT))
+
+        if (IsKeyReleased(KEY_LEFT))
         {
             currentModel--;
-            if(currentModel < 0)
-            {
-                currentModel = modelCount - 1;
-            }
+            if (currentModel < 0) currentModel = MAX_MODELS - 1;
         }
 
         // Draw
@@ -104,11 +99,7 @@ int main(void)
 
     // De-Initialization
     //--------------------------------------------------------------------------------------
-
-    for(int i = 0; i < modelCount; i++)
-    {
-        UnloadModel(model[i]);         // Unload model
-    }
+    for (int i = 0; i < MAX_MODELS; i++) UnloadModel(model[i]);  // Unload models
 
     CloseWindow();              // Close window and OpenGL context
     //--------------------------------------------------------------------------------------

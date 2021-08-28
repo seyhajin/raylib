@@ -90,7 +90,7 @@
 
 typedef enum { TOUCH_UP, TOUCH_DOWN, TOUCH_MOVE } TouchAction;
 
-// Gesture events
+// Gesture event
 // NOTE: MAX_TOUCH_POINTS fixed to 4
 typedef struct {
     int touchAction;
@@ -98,10 +98,6 @@ typedef struct {
     int pointerId[4];
     Vector2 position[4];
 } GestureEvent;
-
-#ifdef __cplusplus
-extern "C" {            // Prevents name mangling of functions
-#endif
 
 //----------------------------------------------------------------------------------
 // Global Variables Definition
@@ -111,11 +107,15 @@ extern "C" {            // Prevents name mangling of functions
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
+
+#ifdef __cplusplus
+extern "C" {            // Prevents name mangling of functions
+#endif
+
 void ProcessGestureEvent(GestureEvent event);           // Process gesture event and translate it into gestures
 void UpdateGestures(void);                              // Update gestures detected (must be called every frame)
-
 #if defined(GESTURES_STANDALONE)
-void SetGesturesEnabled(unsigned int gestureFlags);     // Enable a set of gestures using flags
+void SetGesturesEnabled(unsigned int flags);            // Enable a set of gestures using flags
 bool IsGestureDetected(int gesture);                    // Check if a gesture have been detected
 int GetGestureDetected(void);                           // Get latest detected gesture
 int GetTouchPointsCount(void);                          // Get touch points count
@@ -141,9 +141,15 @@ float GetGesturePinchAngle(void);                       // Get gesture pinch ang
 #if defined(GESTURES_IMPLEMENTATION)
 
 #if defined(_WIN32)
+    #if defined(__cplusplus)
+    extern "C" {        // Prevents name mangling of functions
+    #endif
     // Functions required to query time on Windows
     int __stdcall QueryPerformanceCounter(unsigned long long int *lpPerformanceCount);
     int __stdcall QueryPerformanceFrequency(unsigned long long int *lpFrequency);
+    #if defined(__cplusplus)
+    }
+    #endif
 #elif defined(__linux__)
     #if _POSIX_C_SOURCE < 199309L
         #undef _POSIX_C_SOURCE
@@ -234,9 +240,9 @@ static double GetCurrentTime(void);
 //----------------------------------------------------------------------------------
 
 // Enable only desired getures to be detected
-void SetGesturesEnabled(unsigned int gestureFlags)
+void SetGesturesEnabled(unsigned int flags)
 {
-    GESTURES.enabledFlags = gestureFlags;
+    GESTURES.enabledFlags = flags;
 }
 
 // Check if a gesture have been detected
@@ -490,7 +496,7 @@ float GetGesturePinchAngle(void)
 // Module specific Functions Definition
 //----------------------------------------------------------------------------------
 #if defined(GESTURES_STANDALONE)
-// Returns angle from two-points vector with X-axis
+// Get angle from two-points vector with X-axis
 static float Vector2Angle(Vector2 v1, Vector2 v2)
 {
     float angle = atan2f(v2.y - v1.y, v2.x - v1.x)*(180.0f/PI);
