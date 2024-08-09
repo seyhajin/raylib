@@ -4083,6 +4083,8 @@ unsigned int rlCompileShader(const char *shaderCode, int type)
             //case GL_GEOMETRY_SHADER:
         #if defined(GRAPHICS_API_OPENGL_43)
             case GL_COMPUTE_SHADER: TRACELOG(RL_LOG_WARNING, "SHADER: [ID %i] Failed to compile compute shader code", shader); break;
+        #elif defined(GRAPHICS_API_OPENGL_33)
+            case GL_COMPUTE_SHADER: TRACELOG(RL_LOG_WARNING, "SHADER: Compute shaders not enabled. Define GRAPHICS_API_OPENGL_43", shader); break;
         #endif
             default: break;
         }
@@ -4108,6 +4110,8 @@ unsigned int rlCompileShader(const char *shaderCode, int type)
             //case GL_GEOMETRY_SHADER:
         #if defined(GRAPHICS_API_OPENGL_43)
             case GL_COMPUTE_SHADER: TRACELOG(RL_LOG_INFO, "SHADER: [ID %i] Compute shader compiled successfully", shader); break;
+        #elif defined(GRAPHICS_API_OPENGL_33)
+            case GL_COMPUTE_SHADER: TRACELOG(RL_LOG_WARNING, "SHADER: Compute shaders not enabled. Define GRAPHICS_API_OPENGL_43", shader); break;
         #endif
             default: break;
         }
@@ -4348,6 +4352,8 @@ unsigned int rlLoadComputeShaderProgram(unsigned int shaderId)
 
         TRACELOG(RL_LOG_INFO, "SHADER: [ID %i] Compute shader program loaded successfully", program);
     }
+#else
+    TRACELOG(RL_LOG_WARNING, "SHADER: Compute shaders not enabled. Define GRAPHICS_API_OPENGL_43");
 #endif
 
     return program;
@@ -4372,6 +4378,8 @@ unsigned int rlLoadShaderBuffer(unsigned int size, const void *data, int usageHi
     glBufferData(GL_SHADER_STORAGE_BUFFER, size, data, usageHint? usageHint : RL_STREAM_COPY);
     if (data == NULL) glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R8UI, GL_RED_INTEGER, GL_UNSIGNED_BYTE, NULL);    // Clear buffer data to 0
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+#else
+    TRACELOG(RL_LOG_WARNING, "SSBO: SSBO not enabled. Define GRAPHICS_API_OPENGL_43");
 #endif
 
     return ssbo;
@@ -4382,7 +4390,10 @@ void rlUnloadShaderBuffer(unsigned int ssboId)
 {
 #if defined(GRAPHICS_API_OPENGL_43)
     glDeleteBuffers(1, &ssboId);
+#else
+    TRACELOG(RL_LOG_WARNING, "SSBO: SSBO not enabled. Define GRAPHICS_API_OPENGL_43");
 #endif
+
 }
 
 // Update SSBO buffer data
@@ -4397,11 +4408,11 @@ void rlUpdateShaderBuffer(unsigned int id, const void *data, unsigned int dataSi
 // Get SSBO buffer size
 unsigned int rlGetShaderBufferSize(unsigned int id)
 {
-    long long size = 0;
+    GLint64 size = 0;
 
 #if defined(GRAPHICS_API_OPENGL_43)
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
-    glGetInteger64v(GL_SHADER_STORAGE_BUFFER_SIZE, &size);
+    glGetBufferParameteri64v(GL_SHADER_STORAGE_BUFFER, GL_BUFFER_SIZE, &size);
 #endif
 
     return (size > 0)? (unsigned int)size : 0;
@@ -4442,6 +4453,8 @@ void rlBindImageTexture(unsigned int id, unsigned int index, int format, bool re
 
     rlGetGlTextureFormats(format, &glInternalFormat, &glFormat, &glType);
     glBindImageTexture(index, id, 0, 0, 0, readonly? GL_READ_ONLY : GL_READ_WRITE, glInternalFormat);
+#else
+    TRACELOG(RL_LOG_WARNING, "TEXTURE: Image texture binding not enabled. Define GRAPHICS_API_OPENGL_43");
 #endif
 }
 
@@ -4756,7 +4769,16 @@ static void rlLoadShaderDefault(void)
     "out vec2 fragTexCoord;             \n"
     "out vec4 fragColor;                \n"
 #endif
-#if defined(GRAPHICS_API_OPENGL_ES2)
+
+#if defined(GRAPHICS_API_OPENGL_ES3)
+    "#version 300 es                    \n"
+    "precision mediump float;           \n"     // Precision required for OpenGL ES3 (WebGL 2) (on some browsers)
+    "in vec3 vertexPosition;            \n"
+    "in vec2 vertexTexCoord;            \n"
+    "in vec4 vertexColor;               \n"
+    "out vec2 fragTexCoord;             \n"
+    "out vec4 fragColor;                \n"
+#elif defined(GRAPHICS_API_OPENGL_ES2)
     "#version 100                       \n"
     "precision mediump float;           \n"     // Precision required for OpenGL ES2 (WebGL) (on some browsers)
     "attribute vec3 vertexPosition;     \n"
@@ -4765,6 +4787,7 @@ static void rlLoadShaderDefault(void)
     "varying vec2 fragTexCoord;         \n"
     "varying vec4 fragColor;            \n"
 #endif
+
     "uniform mat4 mvp;                  \n"
     "void main()                        \n"
     "{                                  \n"
@@ -4799,7 +4822,21 @@ static void rlLoadShaderDefault(void)
     "    finalColor = texelColor*colDiffuse*fragColor;        \n"
     "}                                  \n";
 #endif
-#if defined(GRAPHICS_API_OPENGL_ES2)
+
+#if defined(GRAPHICS_API_OPENGL_ES3)
+    "#version 300 es                    \n"
+    "precision mediump float;           \n"     // Precision required for OpenGL ES3 (WebGL 2)
+    "in vec2 fragTexCoord;              \n"
+    "in vec4 fragColor;                 \n"
+    "out vec4 finalColor;               \n"
+    "uniform sampler2D texture0;        \n"
+    "uniform vec4 colDiffuse;           \n"
+    "void main()                        \n"
+    "{                                  \n"
+    "    vec4 texelColor = texture(texture0, fragTexCoord);   \n"
+    "    finalColor = texelColor*colDiffuse*fragColor;        \n"
+    "}                                  \n";
+#elif defined(GRAPHICS_API_OPENGL_ES2)
     "#version 100                       \n"
     "precision mediump float;           \n"     // Precision required for OpenGL ES2 (WebGL)
     "varying vec2 fragTexCoord;         \n"
@@ -4969,7 +5006,8 @@ static int rlGetPixelDataSize(int width, int height, int format)
         default: break;
     }
 
-    dataSize = width*height*bpp/8;  // Total data size in bytes
+    double bytesPerPixel = (double)bpp/8.0;
+    dataSize = (int)(bytesPerPixel*width*height); // Total data size in bytes
 
     // Most compressed formats works on 4x4 blocks,
     // if texture is smaller, minimum dataSize is 8 or 16
